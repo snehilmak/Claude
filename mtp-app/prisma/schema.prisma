@@ -178,6 +178,7 @@ model Transaction {
   // Parties
   customerId       String
   customer         Customer @relation(fields: [customerId], references: [id])
+  senderPhone      String?  // denormalized for quick lookup (mirrors Excel Phone No column)
   recipientName    String
   recipientPhone   String?
   recipientAddress String?
@@ -185,13 +186,13 @@ model Transaction {
   recipientCountry String
 
   // Amounts
-  sendAmount      Decimal @db.Decimal(12, 2)
-  sendCurrency    String  @default("USD")
-  receiveAmount   Decimal @db.Decimal(12, 2)
-  receiveCurrency String
-  exchangeRate    Decimal @db.Decimal(10, 6)
-  fee             Decimal @db.Decimal(10, 2)
-  totalCollected  Decimal @db.Decimal(12, 2)
+  sendAmount      Decimal  @db.Decimal(12, 2)
+  sendCurrency    String   @default("USD")
+  receiveAmount   Decimal? @db.Decimal(12, 2)
+  receiveCurrency String?
+  exchangeRate    Decimal? @db.Decimal(10, 6)
+  fee             Decimal  @default(0) @db.Decimal(10, 2)
+  totalCollected  Decimal  @db.Decimal(12, 2)
 
   // Company
   companyId String
@@ -201,8 +202,13 @@ model Transaction {
   paymentMethod PaymentMethod @default(CASH)
 
   // Status
-  status       TransactionStatus @default(PENDING)
-  cancelReason String?
+  status        TransactionStatus @default(PENDING)
+  cancelReason  String?
+  cancelledAt   DateTime?
+
+  // Refund tracking (matches Excel: Refund Date, Refund Verified)
+  refundDate     DateTime?
+  refundVerified Boolean   @default(false)
 
   // Compliance
   purposeOfTransfer String?

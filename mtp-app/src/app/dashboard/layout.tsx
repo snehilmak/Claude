@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard,
   ArrowUpRight,
+  Zap,
   List,
   Users,
   Building2,
@@ -16,7 +17,8 @@ import { LocationSwitcher } from '@/components/LocationSwitcher';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/transactions/new', label: 'New Transfer', icon: ArrowUpRight },
+  { href: '/dashboard/transactions/quick', label: 'Quick Entry', icon: Zap },
+  { href: '/dashboard/transactions/new', label: 'Detailed Entry', icon: ArrowUpRight },
   { href: '/dashboard/transactions', label: 'Transactions', icon: List },
   { href: '/dashboard/customers', label: 'Customers', icon: Users },
   { href: '/dashboard/companies', label: 'Companies', icon: Building2 },
