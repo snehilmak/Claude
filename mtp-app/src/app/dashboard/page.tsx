@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { getActiveLocation, locationWhereClause } from '@/lib/location';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
 import { ArrowUpRight, Users, DollarSign, Building2, AlertCircle } from 'lucide-react';
@@ -9,63 +10,59 @@ export default async function DashboardPage() {
   const session = await getSession();
   if (!session) redirect('/login');
 
+  const active = await getActiveLocation(session);
+  const locWhere = locationWhereClause(active);
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
+  const baseWhere = { organizationId: session.organization.id, ...locWhere };
+
   const [todayTxCount, todayTxSum, totalCustomers, topCompany, recentTx, pendingTx] =
     await Promise.all([
       prisma.transaction.count({
-        where: {
-          organizationId: session.organization.id,
-          createdAt: { gte: today, lt: tomorrow },
-          status: { not: 'CANCELLED' },
-        },
+        where: { ...baseWhere, createdAt: { gte: today, lt: tomorrow }, status: { not: 'CANCELLED' } },
       }),
       prisma.transaction.aggregate({
-        where: {
-          organizationId: session.organization.id,
-          createdAt: { gte: today, lt: tomorrow },
-          status: { not: 'CANCELLED' },
-        },
+        where: { ...baseWhere, createdAt: { gte: today, lt: tomorrow }, status: { not: 'CANCELLED' } },
         _sum: { totalCollected: true },
       }),
+      // Customers are org-wide (can send from any location)
       prisma.customer.count({ where: { organizationId: session.organization.id } }),
       prisma.transaction.groupBy({
         by: ['companyId'],
-        where: { organizationId: session.organization.id, createdAt: { gte: today, lt: tomorrow } },
+        where: { ...baseWhere, createdAt: { gte: today, lt: tomorrow } },
         _count: { id: true },
         orderBy: { _count: { id: 'desc' } },
         take: 1,
       }),
       prisma.transaction.findMany({
-        where: { organizationId: session.organization.id },
-        include: { customer: true, company: true },
+        where: baseWhere,
+        include: { customer: true, company: true, location: { select: { name: true } } },
         orderBy: { createdAt: 'desc' },
         take: 10,
       }),
-      prisma.transaction.count({
-        where: { organizationId: session.organization.id, status: 'PENDING' },
-      }),
+      prisma.transaction.count({ where: { ...baseWhere, status: 'PENDING' } }),
     ]);
 
   const topCompanyName =
     topCompany.length > 0
-      ? (
-          await prisma.transferCompany.findUnique({
-            where: { id: topCompany[0].companyId },
-            select: { name: true },
-          })
-        )?.name ?? '—'
+      ? (await prisma.transferCompany.findUnique({
+          where: { id: topCompany[0].companyId },
+          select: { name: true },
+        }))?.name ?? '—'
       : '—';
+
+  const contextLabel = active.mode === 'single' ? active.locationName : 'All Locations';
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-sm text-gray-500">
-          Welcome back, {session.user.name}. Here&apos;s today&apos;s summary.
+          {contextLabel} · Welcome back, {session.user.name}
         </p>
       </div>
 
@@ -102,7 +99,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-gray-900">{totalCustomers}</p>
-            <p className="text-xs text-gray-500 mt-1">registered senders</p>
+            <p className="text-xs text-gray-500 mt-1">org-wide senders</p>
           </CardContent>
         </Card>
 
@@ -138,6 +135,7 @@ export default async function DashboardPage() {
                     <th className="pb-3 font-medium">Recipient</th>
                     <th className="pb-3 font-medium">Company</th>
                     <th className="pb-3 font-medium">Amount</th>
+                    {active.mode === 'all' && <th className="pb-3 font-medium">Location</th>}
                     <th className="pb-3 font-medium">Status</th>
                     <th className="pb-3 font-medium">Date</th>
                   </tr>
@@ -150,9 +148,10 @@ export default async function DashboardPage() {
                       </td>
                       <td className="py-3 text-gray-600">{tx.recipientName}</td>
                       <td className="py-3 text-gray-600">{tx.company.name}</td>
-                      <td className="py-3 text-gray-900 font-medium">
-                        {formatCurrency(Number(tx.sendAmount))}
-                      </td>
+                      <td className="py-3 font-medium">{formatCurrency(Number(tx.sendAmount))}</td>
+                      {active.mode === 'all' && (
+                        <td className="py-3 text-gray-500 text-xs">{tx.location.name}</td>
+                      )}
                       <td className="py-3">
                         <span
                           className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${

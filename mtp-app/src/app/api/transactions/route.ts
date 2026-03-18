@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { getActiveLocation, locationWhereClause } from '@/lib/location';
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const active = await getActiveLocation(session);
+  const locWhere = locationWhereClause(active);
 
   const { searchParams } = req.nextUrl;
   const status = searchParams.get('status');
@@ -12,7 +16,10 @@ export async function GET(req: NextRequest) {
   const from = searchParams.get('from');
   const to = searchParams.get('to');
 
-  const where: Record<string, unknown> = { organizationId: session.organization.id };
+  const where: Record<string, unknown> = {
+    organizationId: session.organization.id,
+    ...locWhere,
+  };
   if (status) where.status = status;
   if (companyId) where.companyId = companyId;
   if (from || to) {
@@ -41,10 +48,42 @@ export async function POST(req: NextRequest) {
     companyId, sendAmount, exchangeRate, receiveAmount, fee, totalCollected,
     paymentMethod, referenceNumber, controlNumber,
     purposeOfTransfer, sourceOfFunds, notes,
+    locationId: bodyLocationId,
   } = body;
 
   if (!customerId || !recipientName || !recipientCountry || !companyId || !sendAmount || !exchangeRate) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  }
+
+  // Resolve the location for this transaction
+  const active = await getActiveLocation(session);
+  let resolvedLocationId: string;
+
+  if (session.user.role === 'AGENT') {
+    // Agents are locked to their assigned location
+    if (!session.user.locationId) {
+      return NextResponse.json({ error: 'Agent is not assigned to a location' }, { status: 400 });
+    }
+    resolvedLocationId = session.user.locationId;
+  } else if (active.mode === 'single') {
+    resolvedLocationId = active.locationId;
+  } else {
+    // Owner/Manager in "all" mode — body may provide a specific locationId
+    if (bodyLocationId) {
+      const loc = await prisma.location.findFirst({
+        where: { id: bodyLocationId, organizationId: session.organization.id },
+      });
+      if (!loc) return NextResponse.json({ error: 'Invalid location' }, { status: 400 });
+      resolvedLocationId = bodyLocationId;
+    } else {
+      // Default to first location
+      const loc = await prisma.location.findFirst({
+        where: { organizationId: session.organization.id },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (!loc) return NextResponse.json({ error: 'No location configured' }, { status: 400 });
+      resolvedLocationId = loc.id;
+    }
   }
 
   // Verify customer belongs to this org
@@ -53,12 +92,6 @@ export async function POST(req: NextRequest) {
   });
   if (!customer) return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
   if (customer.isBlocked) return NextResponse.json({ error: 'Customer is blocked' }, { status: 400 });
-
-  // Get default location
-  const location = await prisma.location.findFirst({
-    where: { organizationId: session.organization.id },
-  });
-  if (!location) return NextResponse.json({ error: 'No location configured' }, { status: 400 });
 
   const tx = await prisma.transaction.create({
     data: {
@@ -71,7 +104,7 @@ export async function POST(req: NextRequest) {
       sendAmount: parseFloat(sendAmount),
       exchangeRate: parseFloat(exchangeRate),
       receiveAmount: parseFloat(receiveAmount ?? '0'),
-      receiveCurrency: 'MXN', // TODO: derive from country
+      receiveCurrency: 'MXN',
       fee: parseFloat(fee ?? '0'),
       totalCollected: parseFloat(totalCollected ?? sendAmount),
       paymentMethod: paymentMethod ?? 'CASH',
@@ -82,7 +115,7 @@ export async function POST(req: NextRequest) {
       notes: notes || null,
       status: 'PENDING',
       organizationId: session.organization.id,
-      locationId: location.id,
+      locationId: resolvedLocationId,
       agentId: session.user.id,
     },
   });

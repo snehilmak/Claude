@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { getActiveLocation, getOrgLocations, locationWhereClause } from '@/lib/location';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge, statusBadgeVariant } from '@/components/ui/badge';
@@ -9,7 +10,7 @@ import { formatCurrency } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 
 interface PageProps {
-  searchParams: Promise<{ status?: string; company?: string; from?: string; to?: string }>;
+  searchParams: Promise<{ status?: string; company?: string; from?: string; to?: string; loc?: string }>;
 }
 
 export default async function TransactionsPage({ searchParams }: PageProps) {
@@ -19,7 +20,13 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const { status, company, from, to } = params;
 
-  const whereClause: Record<string, unknown> = { organizationId: session.organization.id };
+  const active = await getActiveLocation(session);
+  const locWhere = locationWhereClause(active);
+
+  const whereClause: Record<string, unknown> = {
+    organizationId: session.organization.id,
+    ...locWhere,
+  };
   if (status) whereClause.status = status;
   if (company) whereClause.companyId = company;
   if (from || to) {
@@ -32,17 +39,24 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
     }
   }
 
-  const [transactions, companies] = await Promise.all([
+  const [transactions, companies, locations] = await Promise.all([
     prisma.transaction.findMany({
       where: whereClause,
-      include: { customer: true, company: true, agent: { select: { name: true } } },
+      include: {
+        customer: true,
+        company: true,
+        agent: { select: { name: true } },
+        location: { select: { name: true } },
+      },
       orderBy: { createdAt: 'desc' },
       take: 100,
     }),
     prisma.transferCompany.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } }),
+    active.mode === 'all' ? getOrgLocations(session.organization.id) : Promise.resolve([]),
   ]);
 
   const totalAmount = transactions.reduce((sum, tx) => sum + Number(tx.totalCollected), 0);
+  const showLocationCol = active.mode === 'all';
 
   return (
     <div className="space-y-6">
@@ -51,6 +65,7 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
           <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
           <p className="text-sm text-gray-500">
             {transactions.length} records — {formatCurrency(totalAmount)} total
+            {active.mode === 'single' && ` · ${active.locationName}`}
           </p>
         </div>
         <Link href="/dashboard/transactions/new">
@@ -67,42 +82,22 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
           <form className="flex flex-wrap gap-3">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">From</label>
-              <input
-                type="date"
-                name="from"
-                defaultValue={from}
-                className="rounded border border-gray-300 px-2 py-1 text-sm"
-              />
+              <input type="date" name="from" defaultValue={from} className="rounded border border-gray-300 px-2 py-1 text-sm" />
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">To</label>
-              <input
-                type="date"
-                name="to"
-                defaultValue={to}
-                className="rounded border border-gray-300 px-2 py-1 text-sm"
-              />
+              <input type="date" name="to" defaultValue={to} className="rounded border border-gray-300 px-2 py-1 text-sm" />
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">Company</label>
-              <select
-                name="company"
-                defaultValue={company}
-                className="rounded border border-gray-300 px-2 py-1 text-sm"
-              >
+              <select name="company" defaultValue={company} className="rounded border border-gray-300 px-2 py-1 text-sm">
                 <option value="">All Companies</option>
-                {companies.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
+                {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600">Status</label>
-              <select
-                name="status"
-                defaultValue={status}
-                className="rounded border border-gray-300 px-2 py-1 text-sm"
-              >
+              <select name="status" defaultValue={status} className="rounded border border-gray-300 px-2 py-1 text-sm">
                 <option value="">All</option>
                 <option value="PENDING">Pending</option>
                 <option value="SENT">Sent</option>
@@ -113,9 +108,7 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
             </div>
             <div className="flex items-end gap-2">
               <Button type="submit" variant="secondary" size="sm">Filter</Button>
-              <Link href="/dashboard/transactions">
-                <Button variant="outline" size="sm">Clear</Button>
-              </Link>
+              <Link href="/dashboard/transactions"><Button variant="outline" size="sm">Clear</Button></Link>
             </div>
           </form>
         </CardContent>
@@ -123,9 +116,7 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
 
       {/* Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Transfer Records</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Transfer Records</CardTitle></CardHeader>
         <CardContent>
           {transactions.length === 0 ? (
             <div className="py-10 text-center text-gray-400">No transactions found.</div>
@@ -143,6 +134,7 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
                     <th className="pb-3 font-medium">Receive</th>
                     <th className="pb-3 font-medium">Fee</th>
                     <th className="pb-3 font-medium">Status</th>
+                    {showLocationCol && <th className="pb-3 font-medium">Location</th>}
                     <th className="pb-3 font-medium">Agent</th>
                     <th className="pb-3 font-medium">Date</th>
                   </tr>
@@ -167,6 +159,9 @@ export default async function TransactionsPage({ searchParams }: PageProps) {
                       <td className="py-3">
                         <Badge variant={statusBadgeVariant(tx.status)}>{tx.status}</Badge>
                       </td>
+                      {showLocationCol && (
+                        <td className="py-3 text-xs text-gray-500">{tx.location.name}</td>
+                      )}
                       <td className="py-3 text-gray-500">{tx.agent.name}</td>
                       <td className="py-3 text-gray-500">
                         {new Date(tx.createdAt).toLocaleDateString()}

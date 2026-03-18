@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { prisma } from './db';
-import type { Organization, User } from '@prisma/client';
+import type { Location, Organization, User } from '@prisma/client';
 
 const SESSION_COOKIE = 'mtp_session';
 const SESSION_DURATION_DAYS = 30;
@@ -42,7 +42,7 @@ export async function createSession(userId: string): Promise<string> {
 }
 
 export type SessionData = {
-  user: User;
+  user: User & { location: Location | null };
   organization: Organization;
 };
 
@@ -58,6 +58,7 @@ export async function getSession(): Promise<SessionData | null> {
       user: {
         include: {
           organization: true,
+          location: true,
         },
       },
     },
@@ -71,7 +72,7 @@ export async function getSession(): Promise<SessionData | null> {
   }
 
   return {
-    user: session.user,
+    user: { ...session.user, location: session.user.location ?? null },
     organization: session.user.organization,
   };
 }
