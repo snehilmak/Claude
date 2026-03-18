@@ -43,6 +43,7 @@ export function formatDateTime(date: Date | string): string {
 export function generateSlug(name: string): string {
   return name
     .toLowerCase()
+    .replace(/['\u2019\u2018]/g, '') // strip apostrophes/quotes before hyphenating
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 }
