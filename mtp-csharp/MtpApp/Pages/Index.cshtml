@@ -1,0 +1,128 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Money Transfer Management Platform";
+    Layout = "_Layout";
+}
+
+<!-- ── Navigation ─────────────────────────────────────────────────────────── -->
+<nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/">
+            <span class="bg-primary text-white rounded p-1"><i class="bi bi-building"></i></span>
+            TransferPro
+        </a>
+        <div class="ms-auto d-flex gap-2">
+            <a href="/login" class="btn btn-outline-secondary btn-sm">Sign in</a>
+            <a href="/register" class="btn btn-primary btn-sm">Get started</a>
+        </div>
+    </div>
+</nav>
+
+<!-- ── Hero ──────────────────────────────────────────────────────────────── -->
+<section class="py-5" style="background:linear-gradient(135deg,#0f172a,#1e3a5f,#0f172a);color:#fff;">
+    <div class="container text-center py-5">
+        <span class="badge bg-primary bg-opacity-25 text-primary-emphasis border border-primary-subtle rounded-pill px-3 py-2 mb-4 d-inline-block">
+            Built for money transfer agencies
+        </span>
+        <h1 class="display-4 fw-bold mb-4">
+            Manage every transfer.<br>
+            <span class="text-primary">Stay compliant. Grow faster.</span>
+        </h1>
+        <p class="lead text-white-50 mx-auto mb-5" style="max-width:600px;">
+            TransferPro is the all-in-one platform for businesses that process in-person money transfers.
+            Unify Intermex, Ria, Vigo, MoneyGram, and more — with compliance built in from day one.
+        </p>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="/register" class="btn btn-primary btn-lg px-5">
+                Start free trial <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+            <a href="/login" class="btn btn-outline-light btn-lg px-5">Sign in to dashboard</a>
+        </div>
+        <p class="text-white-50 small mt-3">14-day free trial · No credit card required</p>
+    </div>
+</section>
+
+<!-- ── Supported companies ────────────────────────────────────────────────── -->
+<section class="bg-light py-4 border-bottom">
+    <div class="container text-center">
+        <p class="text-muted small text-uppercase fw-semibold tracking-wide mb-3">Works with all major transfer companies</p>
+        <div class="d-flex flex-wrap justify-content-center gap-2">
+            @foreach (var company in new[] { "Intermex", "Vigo", "Ria", "Barri", "Maxi", "MoneyGram", "ViaAmericas", "Western Union", "Sigue", "Dolex" })
+            {
+                <span class="badge bg-white text-dark border shadow-sm px-3 py-2 fs-6">@company</span>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ── Features ───────────────────────────────────────────────────────────── -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Everything your agency needs</h2>
+            <p class="text-muted lead">From first customer interaction to end-of-day reporting.</p>
+        </div>
+        <div class="row g-4">
+            @foreach (var f in Model.Features)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border shadow-sm p-4">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded p-2 d-inline-block mb-3">
+                            <i class="bi @f.Icon fs-4"></i>
+                        </div>
+                        <h5 class="fw-semibold">@f.Title</h5>
+                        <p class="text-muted small mb-0">@f.Description</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ── Pricing ────────────────────────────────────────────────────────────── -->
+<section class="bg-light py-5" id="pricing">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Simple, transparent pricing</h2>
+            <p class="text-muted lead">One plan. Everything included. No surprises.</p>
+        </div>
+        <div class="col-md-6 mx-auto">
+            <div class="card border-primary shadow-lg p-4 position-relative">
+                <span class="badge bg-primary position-absolute top-0 start-50 translate-middle px-3 py-2">Most popular</span>
+                <div class="text-center mt-3 mb-4">
+                    <h4 class="fw-bold">Agency Plan</h4>
+                    <div class="display-4 fw-bold">$49 <small class="fs-6 text-muted fw-normal">/location/month</small></div>
+                    <p class="text-muted small">Billed monthly · Add more locations anytime</p>
+                </div>
+                <ul class="list-unstyled">
+                    @foreach (var feat in new[] {
+                        "Unlimited transactions", "All money transfer companies",
+                        "Customer management", "Compliance & CTR reporting",
+                        "Multi-user access", "Email support",
+                        "Data export (CSV/PDF)", "Audit trail & logs"
+                    })
+                    {
+                        <li class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-check-circle-fill text-primary"></i> @feat
+                        </li>
+                    }
+                </ul>
+                <a href="/register" class="btn btn-primary w-100 btn-lg mt-3">Start free trial</a>
+                <p class="text-center text-muted small mt-2">14 days free · No credit card</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+<footer class="bg-dark text-white-50 py-4">
+    <div class="container d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <span class="fw-bold text-white"><i class="bi bi-building me-1 text-primary"></i>TransferPro</span>
+        <span class="small">&copy; @DateTime.Now.Year TransferPro. All rights reserved.</span>
+        <div class="d-flex gap-3 small">
+            <a href="/login" class="text-white-50 text-decoration-none">Sign in</a>
+            <a href="/register" class="text-white-50 text-decoration-none">Register</a>
+        </div>
+    </div>
+</footer>

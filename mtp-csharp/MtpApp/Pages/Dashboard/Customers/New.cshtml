@@ -1,0 +1,114 @@
+@page
+@model MtpApp.Pages.Dashboard.Customers.NewModel
+@{
+    ViewData["Title"] = "Add Customer";
+    Layout = "_Layout";
+}
+
+<div class="d-flex">
+    @await Html.PartialAsync("_DashboardLayout")
+
+    <div class="main-content p-4 w-100">
+        <div class="mb-4">
+            <a href="/dashboard/customers" class="text-muted text-decoration-none small">
+                <i class="bi bi-arrow-left me-1"></i>Back to Customers
+            </a>
+            <h4 class="fw-bold mt-1 mb-0">Add New Customer</h4>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">@Model.ErrorMessage</div>
+        }
+
+        <form method="post" class="row g-4">
+
+            <!-- ── Personal Info ─────────────────────────────────────────── -->
+            <div class="col-12">
+                <div class="card border-0 shadow-sm p-4">
+                    <h6 class="fw-semibold mb-3">Personal Information</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">First Name <span class="text-danger">*</span></label>
+                            <input asp-for="FirstName" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">Middle Name</label>
+                            <input asp-for="MiddleName" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">Last Name <span class="text-danger">*</span></label>
+                            <input asp-for="LastName" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">Phone <span class="text-danger">*</span></label>
+                            <input asp-for="Phone" type="tel" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">Email</label>
+                            <input asp-for="Email" type="email" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">Date of Birth</label>
+                            <input asp-for="DateOfBirth" type="date" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Address</label>
+                            <input asp-for="Address" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">City</label>
+                            <input asp-for="City" class="form-control" />
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label fw-medium">State</label>
+                            <input asp-for="State" class="form-control" maxlength="2" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-medium">ZIP</label>
+                            <input asp-for="Zip" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── ID Verification ───────────────────────────────────────── -->
+            <div class="col-12">
+                <div class="card border-0 shadow-sm p-4">
+                    <h6 class="fw-semibold mb-3">ID Verification <small class="text-muted fw-normal">(required by BSA/AML)</small></h6>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">ID Type</label>
+                            <select asp-for="IdType" class="form-select">
+                                <option value="">Select type</option>
+                                @foreach (var t in Enum.GetNames<MtpApp.Models.IdType>())
+                                {
+                                    <option value="@t">@t</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">ID Number</label>
+                            <input asp-for="IdNumber" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">Issued By (State/Country)</label>
+                            <input asp-for="IdIssuedBy" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">Expiration Date</label>
+                            <input asp-for="IdExpiresAt" type="date" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-person-plus me-1"></i>Add Customer
+                </button>
+                <a href="/dashboard/customers" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

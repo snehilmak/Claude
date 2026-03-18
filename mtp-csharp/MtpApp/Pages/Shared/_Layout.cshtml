@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TransferPro</title>
+
+    <!-- Bootstrap 5 via CDN — no local build step required -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+          crossorigin="anonymous" />
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+          rel="stylesheet" />
+
+    <style>
+        /* Dashboard sidebar layout */
+        .sidebar {
+            width: 220px;
+            min-height: 100vh;
+            background: #1e293b;
+            color: #94a3b8;
+        }
+        .sidebar a { color: #94a3b8; text-decoration: none; }
+        .sidebar a:hover, .sidebar a.active { color: #fff; background: rgba(255,255,255,.08); border-radius: 6px; }
+        .sidebar .brand { color: #fff; font-weight: 700; font-size: 1.1rem; }
+        .main-content { flex: 1; background: #f8fafc; min-height: 100vh; }
+        .badge-pending   { background: #fef3c7; color: #92400e; }
+        .badge-sent      { background: #dbeafe; color: #1e40af; }
+        .badge-paid      { background: #dcfce7; color: #166534; }
+        .badge-cancelled { background: #fee2e2; color: #991b1b; }
+        .badge-held      { background: #f3e8ff; color: #6b21a8; }
+    </style>
+</head>
+<body>
+    @RenderBody()
+
+    <!-- Bootstrap JS bundle (includes Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+            crossorigin="anonymous"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

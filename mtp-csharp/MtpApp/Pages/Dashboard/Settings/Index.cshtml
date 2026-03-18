@@ -1,0 +1,116 @@
+@page
+@model MtpApp.Pages.Dashboard.Settings.IndexModel
+@{
+    ViewData["Title"] = "Settings";
+    Layout = "_Layout";
+}
+
+<div class="d-flex">
+    @await Html.PartialAsync("_DashboardLayout")
+
+    <div class="main-content p-4 w-100">
+        <h4 class="fw-bold mb-4">Settings</h4>
+
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show">
+                @Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- ── Organization Info ─────────────────────────────────────────── -->
+        <div class="card border-0 shadow-sm p-4 mb-4">
+            <h6 class="fw-semibold mb-3">Organization</h6>
+            <form method="post" asp-page-handler="SaveOrg">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Business Name</label>
+                        <input asp-for="OrgName" class="form-control" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Business Phone</label>
+                        <input asp-for="OrgPhone" type="tel" class="form-control" />
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label fw-medium">Address</label>
+                        <input asp-for="OrgAddress" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium">City</label>
+                        <input asp-for="OrgCity" class="form-control" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-medium">State</label>
+                        <input asp-for="OrgState" class="form-control" maxlength="2" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-medium">ZIP</label>
+                        <input asp-for="OrgZip" class="form-control" />
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Save Organization</button>
+            </form>
+        </div>
+
+        <!-- ── Locations ─────────────────────────────────────────────────── -->
+        <div class="card border-0 shadow-sm p-4 mb-4">
+            <h6 class="fw-semibold mb-3">Locations</h6>
+            <div class="table-responsive mb-3">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr><th>Name</th><th>Address</th><th>License #</th><th>Phone</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var loc in Model.Locations)
+                        {
+                            <tr>
+                                <td>@loc.Name</td>
+                                <td class="small text-muted">@(loc.Address ?? "—")</td>
+                                <td class="font-monospace small">@(loc.LicenseNumber ?? "—")</td>
+                                <td>@(loc.Phone ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <form method="post" asp-page-handler="AddLocation" class="row g-2">
+                <div class="col-md-4">
+                    <input name="locationName" class="form-control form-control-sm" placeholder="New location name" required />
+                </div>
+                <div class="col-md-4">
+                    <input name="locationAddress" class="form-control form-control-sm" placeholder="Address (optional)" />
+                </div>
+                <div class="col-md-2">
+                    <input name="licenseNumber" class="form-control form-control-sm" placeholder="MSB License #" />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary btn-sm w-100">Add Location</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ── Team Members ───────────────────────────────────────────────── -->
+        <div class="card border-0 shadow-sm p-4">
+            <h6 class="fw-semibold mb-3">Team Members</h6>
+            <div class="table-responsive mb-3">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr><th>Name</th><th>Email</th><th>Role</th><th>Location</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var u in Model.Users)
+                        {
+                            <tr>
+                                <td>@u.Name</td>
+                                <td class="text-muted small">@u.Email</td>
+                                <td><span class="badge bg-secondary">@u.Role</span></td>
+                                <td class="text-muted small">@(u.Location?.Name ?? "All locations")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

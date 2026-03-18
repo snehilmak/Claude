@@ -1,0 +1,115 @@
+@page
+@model MtpApp.Pages.Dashboard.Transactions.IndexModel
+@{
+    ViewData["Title"] = "Transactions";
+    Layout = "_Layout";
+}
+
+<div class="d-flex">
+    @await Html.PartialAsync("_DashboardLayout")
+
+    <div class="main-content p-4 w-100">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0">Transactions</h4>
+            <a href="/dashboard/transactions/new" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i> New Transaction
+            </a>
+        </div>
+
+        <!-- ── Filters ───────────────────────────────────────────────────── -->
+        <form method="get" class="card border-0 shadow-sm p-3 mb-4">
+            <div class="row g-2 align-items-end">
+                <div class="col-sm-3">
+                    <label class="form-label small fw-medium">Status</label>
+                    <select name="status" asp-for="StatusFilter" class="form-select form-select-sm">
+                        <option value="">All statuses</option>
+                        @foreach (var s in Enum.GetNames<MtpApp.Models.TransactionStatus>())
+                        {
+                            <option value="@s" selected="@(Model.StatusFilter == s)">@s</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-sm-3">
+                    <label class="form-label small fw-medium">Company</label>
+                    <select name="company" asp-for="CompanyFilter" class="form-select form-select-sm">
+                        <option value="">All companies</option>
+                        @foreach (var c in Model.Companies)
+                        {
+                            <option value="@c.Id" selected="@(Model.CompanyFilter == c.Id)">@c.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-sm-2">
+                    <label class="form-label small fw-medium">From</label>
+                    <input type="date" name="from" asp-for="From" class="form-control form-control-sm" />
+                </div>
+                <div class="col-sm-2">
+                    <label class="form-label small fw-medium">To</label>
+                    <input type="date" name="to" asp-for="To" class="form-control form-control-sm" />
+                </div>
+                <div class="col-sm-2">
+                    <button type="submit" class="btn btn-secondary btn-sm w-100">Filter</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- ── Transactions table ────────────────────────────────────────── -->
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Control #</th>
+                            <th>Customer</th>
+                            <th>Recipient</th>
+                            <th>Country</th>
+                            <th>Company</th>
+                            <th>Send</th>
+                            <th>Fee</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Transactions.Any())
+                        {
+                            <tr><td colspan="11" class="text-center text-muted py-5">No transactions found</td></tr>
+                        }
+                        @foreach (var t in Model.Transactions)
+                        {
+                            <tr>
+                                <td class="font-monospace small">@(t.ControlNumber ?? "—")</td>
+                                <td>@t.Customer.FullName</td>
+                                <td>@t.RecipientName</td>
+                                <td>@t.RecipientCountry</td>
+                                <td>@t.Company.Name</td>
+                                <td>@t.SendAmount.ToString("C")</td>
+                                <td>@t.Fee.ToString("C")</td>
+                                <td class="fw-medium">@t.TotalCollected.ToString("C")</td>
+                                <td>
+                                    <span class="badge badge-@t.Status.ToString().ToLower()">@t.Status</span>
+                                </td>
+                                <td class="text-muted small">@t.CreatedAt.ToLocalTime().ToString("MMM d, h:mm tt")</td>
+                                <td>
+                                    <!-- Status update form -->
+                                    <form method="post" asp-page-handler="UpdateStatus" class="d-inline">
+                                        <input type="hidden" name="id" value="@t.Id" />
+                                        <select name="newStatus" class="form-select form-select-sm d-inline-block w-auto">
+                                            @foreach (var s in Enum.GetNames<MtpApp.Models.TransactionStatus>())
+                                            {
+                                                <option value="@s" selected="@(t.Status.ToString() == s)">@s</option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary ms-1">Update</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

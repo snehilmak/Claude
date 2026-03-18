@@ -1,0 +1,91 @@
+@page
+@model MtpApp.Pages.Dashboard.IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_Layout";
+}
+
+<div class="d-flex">
+    @await Html.PartialAsync("_DashboardLayout")
+
+    <div class="main-content p-4 w-100">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold mb-0">Welcome, @Model.CurrentUser.Name</h4>
+                <p class="text-muted small mb-0">@Model.CurrentUser.Organization.Name</p>
+            </div>
+            <a href="/dashboard/transactions/new" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i> New Transaction
+            </a>
+        </div>
+
+        <!-- ── Summary cards ─────────────────────────────────────────────── -->
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm p-3">
+                    <div class="text-muted small">Transactions Today</div>
+                    <div class="fs-3 fw-bold text-primary">@Model.TodayCount</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm p-3">
+                    <div class="text-muted small">Volume Today</div>
+                    <div class="fs-3 fw-bold text-success">@Model.TodayVolume.ToString("C")</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm p-3">
+                    <div class="text-muted small">This Month</div>
+                    <div class="fs-3 fw-bold">@Model.MonthCount txns</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm p-3">
+                    <div class="text-muted small">Pending</div>
+                    <div class="fs-3 fw-bold text-warning">@Model.PendingCount</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Recent transactions ───────────────────────────────────────── -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Recent Transactions</span>
+                <a href="/dashboard/transactions" class="btn btn-sm btn-outline-secondary">View all</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Customer</th>
+                            <th>Recipient</th>
+                            <th>Company</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.RecentTransactions.Any())
+                        {
+                            <tr><td colspan="6" class="text-center text-muted py-4">No transactions yet</td></tr>
+                        }
+                        @foreach (var t in Model.RecentTransactions)
+                        {
+                            <tr>
+                                <td>@t.Customer.FullName</td>
+                                <td>@t.RecipientName</td>
+                                <td>@t.Company.Name</td>
+                                <td>@t.SendAmount.ToString("C")</td>
+                                <td>
+                                    <span class="badge badge-@t.Status.ToString().ToLower()">@t.Status</span>
+                                </td>
+                                <td class="text-muted small">@t.CreatedAt.ToLocalTime().ToString("MMM d, h:mm tt")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
