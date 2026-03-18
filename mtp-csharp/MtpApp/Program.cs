@@ -37,12 +37,12 @@ app.UseRouting();
 app.MapRazorPages();
 
 // ── Database initialization ───────────────────────────────────────────────────
-// Automatically applies any pending EF migrations and runs seed data on startup.
-// In production you would run "dotnet ef database update" in your CI/CD pipeline instead.
+// EnsureCreated() creates the database schema and seed data on first run
+// without needing migration files — ideal for local development.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    db.Database.EnsureCreated();
 }
 
 app.Run();
