@@ -52,6 +52,3 @@ After this, you never download manually again — the app updates itself.
 The app is built with [Tauri](https://tauri.app/) (Rust + React). Source,
 build instructions, and the release process live in
 **[`loanledger/`](loanledger/README.md)**.
-
-This repository also contains earlier, separate projects (`mtp-app`,
-`mtp-csharp`) that are unrelated to LoanLedger.
