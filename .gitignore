@@ -1,13 +1,8 @@
-# Dependencies
-mtp-app/node_modules/
-
-# Build outputs
-mtp-app/.next/
-
-# Environment (contains secrets)
-mtp-app/.env
-mtp-app/.env.local
-
 # Misc
 *.log
 .DS_Store
+
+# Local env / secrets — never commit signing keys
+*.key
+.env
+.env.local
