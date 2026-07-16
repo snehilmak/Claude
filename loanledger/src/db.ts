@@ -2,7 +2,14 @@
 // Schema/migrations live in src-tauri (Rust) so they run before the app loads.
 
 import Database from "@tauri-apps/plugin-sql";
-import type { Loan, Payment, NewLoan, NewPayment } from "./types";
+import type {
+  Loan,
+  Payment,
+  NewLoan,
+  NewPayment,
+  LedgerEntry,
+  NewLedgerEntry,
+} from "./types";
 
 const DB_URL = "sqlite:loanledger.db";
 
@@ -118,6 +125,36 @@ export async function createPayment(payment: NewPayment): Promise<number> {
 export async function deletePayment(id: number): Promise<void> {
   const conn = await db();
   await conn.execute("DELETE FROM payments WHERE id = $1", [id]);
+}
+
+export async function listLedgerEntries(): Promise<LedgerEntry[]> {
+  const conn = await db();
+  return conn.select<LedgerEntry[]>(
+    "SELECT * FROM ledger_entries ORDER BY date DESC, id DESC"
+  );
+}
+
+export async function createLedgerEntry(entry: NewLedgerEntry): Promise<number> {
+  const conn = await db();
+  const res = await conn.execute(
+    `INSERT INTO ledger_entries (date, name, direction, amount, note, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [entry.date, entry.name, entry.direction, entry.amount, entry.note, nowIso()]
+  );
+  return res.lastInsertId as number;
+}
+
+/** Insert many entries (used by import). Returns how many were written. */
+export async function createLedgerEntries(entries: NewLedgerEntry[]): Promise<number> {
+  for (const entry of entries) {
+    await createLedgerEntry(entry);
+  }
+  return entries.length;
+}
+
+export async function deleteLedgerEntry(id: number): Promise<void> {
+  const conn = await db();
+  await conn.execute("DELETE FROM ledger_entries WHERE id = $1", [id]);
 }
 
 /** Group every payment by loan id — handy for portfolio rollups. */

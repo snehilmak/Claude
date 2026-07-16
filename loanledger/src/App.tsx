@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import Dashboard from "./pages/Dashboard";
 import Loans from "./pages/Loans";
+import Ledger from "./pages/Ledger";
 import Settings from "./pages/Settings";
 import { UpdateBanner } from "./components/UpdateBanner";
 import { appVersion, autoBackup } from "./system";
 
-type Tab = "dashboard" | "loans" | "settings";
+type Tab = "dashboard" | "loans" | "ledger" | "settings";
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -46,6 +47,12 @@ export default function App() {
           Loans
         </button>
         <button
+          className={`nav-item ${tab === "ledger" ? "active" : ""}`}
+          onClick={() => setTab("ledger")}
+        >
+          Ledger
+        </button>
+        <button
           className={`nav-item ${tab === "settings" ? "active" : ""}`}
           onClick={() => setTab("settings")}
         >
@@ -61,7 +68,12 @@ export default function App() {
         {tab === "loans" && (
           <Loans refreshKey={refreshKey} onChange={refresh} showToast={showToast} />
         )}
-        {tab === "settings" && <Settings version={version} showToast={showToast} />}
+        {tab === "ledger" && (
+          <Ledger refreshKey={refreshKey} onChange={refresh} showToast={showToast} />
+        )}
+        {tab === "settings" && (
+          <Settings version={version} showToast={showToast} onDataChanged={refresh} />
+        )}
       </main>
 
       <UpdateBanner showToast={showToast} />

@@ -56,3 +56,32 @@ export interface NewPayment {
   principal_amount: number;
   note: string;
 }
+
+/** Direction of a cash ledger entry: money received ("in") or paid out ("out"). */
+export type LedgerDirection = "in" | "out";
+
+/**
+ * One cash movement in the general money ledger, tied to a person/account by
+ * name. Independent of loans — this mirrors a simple "funds in / funds out"
+ * spreadsheet.
+ */
+export interface LedgerEntry {
+  id: number;
+  /** ISO date (YYYY-MM-DD). */
+  date: string;
+  /** Person or account the cash moved to/from, e.g. "MAIN OFFICE". */
+  name: string;
+  direction: LedgerDirection;
+  amount: number;
+  note: string;
+  created_at: string;
+}
+
+/** Input shape for creating a ledger entry. */
+export interface NewLedgerEntry {
+  date: string;
+  name: string;
+  direction: LedgerDirection;
+  amount: number;
+  note: string;
+}
