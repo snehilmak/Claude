@@ -3,6 +3,9 @@ import type { Loan, NewLoan, InterestPeriod } from "../types";
 
 interface Props {
   initial?: Loan;
+  /** Existing borrower names, offered as autocomplete so the same person is
+   *  spelled consistently and their loans group together. */
+  knownNames?: string[];
   onCancel: () => void;
   onSave: (loan: NewLoan) => Promise<void>;
 }
@@ -12,7 +15,7 @@ function todayIso(): string {
 }
 
 /** Create/edit form for a loan. Rate is entered as a percent and stored as a fraction. */
-export function LoanForm({ initial, onCancel, onSave }: Props) {
+export function LoanForm({ initial, knownNames = [], onCancel, onSave }: Props) {
   const [name, setName] = useState(initial?.name ?? "");
   const [principal, setPrincipal] = useState(
     initial ? String(initial.principal_original) : ""
@@ -25,6 +28,8 @@ export function LoanForm({ initial, onCancel, onSave }: Props) {
   );
   const [startDate, setStartDate] = useState(initial?.start_date ?? todayIso());
   const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [phone, setPhone] = useState(initial?.phone ?? "");
+  const [email, setEmail] = useState(initial?.email ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -45,6 +50,8 @@ export function LoanForm({ initial, onCancel, onSave }: Props) {
         interest_period: period,
         start_date: startDate,
         notes: notes.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
       });
     } catch (e) {
       setError(String(e));
@@ -67,9 +74,18 @@ export function LoanForm({ initial, onCancel, onSave }: Props) {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
+            list="borrower-names"
             placeholder="Acme Corp"
             autoFocus
           />
+          <datalist id="borrower-names">
+            {knownNames.map((n) => (
+              <option key={n} value={n} />
+            ))}
+          </datalist>
+          <div className="hint muted">
+            Reuse an existing name to keep the same borrower's loans together.
+          </div>
         </div>
 
         <div className="form-row">
@@ -114,13 +130,33 @@ export function LoanForm({ initial, onCancel, onSave }: Props) {
           </div>
         </div>
 
+        <div className="form-row">
+          <div className="field">
+            <label>Contact number</label>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+1 555 123 4567"
+            />
+          </div>
+          <div className="field">
+            <label>Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
+            />
+          </div>
+        </div>
+
         <div className="field">
           <label>Notes</label>
           <textarea
             rows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Terms, contacts, anything useful…"
+            placeholder="Terms, extra details, anything useful…"
           />
         </div>
 

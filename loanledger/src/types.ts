@@ -18,6 +18,10 @@ export interface Loan {
   start_date: string;
   status: LoanStatus;
   notes: string;
+  /** Contact phone number for the borrower (optional, may be ""). */
+  phone: string;
+  /** Contact email for the borrower (optional, may be ""). */
+  email: string;
   created_at: string;
   updated_at: string;
 }
@@ -46,6 +50,8 @@ export interface NewLoan {
   interest_period: InterestPeriod;
   start_date: string;
   notes: string;
+  phone: string;
+  email: string;
 }
 
 /** Input shape for recording a payment. */

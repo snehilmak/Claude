@@ -43,6 +43,24 @@ export function balancesByName(entries: LedgerEntry[]): ContactBalance[] {
   return rows;
 }
 
+/**
+ * A person/account is "settled" when their money in and out cancel out (net
+ * zero). Settled names are hidden from the default ledger view.
+ */
+export function isContactSettled(balance: ContactBalance): boolean {
+  return roundMoney(balance.net) === 0;
+}
+
+/** Only the people who still carry a non-zero balance. */
+export function activeBalances(balances: ContactBalance[]): ContactBalance[] {
+  return balances.filter((b) => !isContactSettled(b));
+}
+
+/** Names whose balance is settled (net zero) — hidden by default. */
+export function settledNames(balances: ContactBalance[]): Set<string> {
+  return new Set(balances.filter(isContactSettled).map((b) => b.name));
+}
+
 /** Whole-ledger rollup. */
 export function summarizeLedger(entries: LedgerEntry[]): LedgerSummary {
   let totalIn = 0;

@@ -8,6 +8,8 @@ import {
   projectSchedule,
   summarize,
   roundMoney,
+  isLoanSettled,
+  isLoanActiveView,
 } from "./calc";
 
 function makeLoan(overrides: Partial<Loan> = {}): Loan {
@@ -20,6 +22,8 @@ function makeLoan(overrides: Partial<Loan> = {}): Loan {
     start_date: "2026-01-01",
     status: "active",
     notes: "",
+    phone: "",
+    email: "",
     created_at: "2026-01-01",
     updated_at: "2026-01-01",
     ...overrides,
@@ -122,6 +126,28 @@ describe("summarize", () => {
     // Collected totals include both loans.
     expect(s.totalInterestCollected).toBe(4800);
     expect(s.totalPrincipalCollected).toBe(150000);
+  });
+});
+
+describe("isLoanSettled / isLoanActiveView", () => {
+  it("is not settled while a balance remains", () => {
+    const loan = makeLoan();
+    const payments = [makePayment({ principal_amount: 100000 })];
+    expect(isLoanSettled(loan, payments)).toBe(false);
+    expect(isLoanActiveView(loan, payments)).toBe(true);
+  });
+
+  it("is settled once fully paid down, and drops out of the active view", () => {
+    const loan = makeLoan();
+    const payments = [makePayment({ principal_amount: 380000 })];
+    expect(isLoanSettled(loan, payments)).toBe(true);
+    expect(isLoanActiveView(loan, payments)).toBe(false);
+  });
+
+  it("is hidden from the active view when manually closed, even with a balance", () => {
+    const loan = makeLoan({ status: "closed" });
+    expect(isLoanSettled(loan, [])).toBe(false);
+    expect(isLoanActiveView(loan, [])).toBe(false);
   });
 });
 

@@ -134,6 +134,15 @@ fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "add contact fields (phone, email) to loans",
+            sql: r#"
+            ALTER TABLE loans ADD COLUMN phone TEXT NOT NULL DEFAULT '';
+            ALTER TABLE loans ADD COLUMN email TEXT NOT NULL DEFAULT '';
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }
 
