@@ -18,6 +18,11 @@ they can accept or postpone.
 - Dashboard with portfolio totals: outstanding principal, interest due this
   period, and interest collected to date.
 - Projected interest schedule for upcoming periods.
+- **Cash ledger**: general money in/out tracking per person or account, with
+  per-person and overall net balances — like a funds in/out spreadsheet.
+- **Import**: load ledger history from a `loanledger-import` JSON file
+  (Settings → Import). Re-importing the same file is safe — duplicates are
+  detected and skipped.
 - **Local-first storage** in a single SQLite file, with one-click manual backup
   and automatic rolling snapshots on every launch.
 

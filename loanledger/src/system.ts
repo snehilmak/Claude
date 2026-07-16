@@ -2,7 +2,7 @@
 
 import { check } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
-import { save } from "@tauri-apps/plugin-dialog";
+import { save, open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
 
@@ -88,4 +88,19 @@ export async function backupDatabase(): Promise<string | null> {
  */
 export function autoBackup(): Promise<string> {
   return invoke<string>("auto_backup");
+}
+
+/**
+ * Let the user pick a LoanLedger import file and return its text content,
+ * or null if they cancelled the dialog.
+ */
+export async function pickImportFile(): Promise<string | null> {
+  const path = await open({
+    title: "Choose a LoanLedger import file",
+    multiple: false,
+    directory: false,
+    filters: [{ name: "LoanLedger import", extensions: ["json"] }],
+  });
+  if (!path) return null;
+  return invoke<string>("read_import_file", { path });
 }

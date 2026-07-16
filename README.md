@@ -36,6 +36,9 @@ After this, you never download manually again — the app updates itself.
   lowers the balance, so next period's interest drops automatically.
 - **Dashboard** — see totals across all loans: outstanding principal, interest
   due this period, and interest collected so far.
+- **Ledger** — track general cash in/out per person or account (separate from
+  loans), with per-person balances and an overall net — like a funds in/out
+  spreadsheet. Past history can be brought in via **Settings → Import**.
 
 ## 💾 Your data & backups
 

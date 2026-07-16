@@ -1,6 +1,6 @@
 [package]
 name = "loanledger"
-version = "0.1.0"
+version = "0.2.0"
 description = "LoanLedger - money manager and loan tracker"
 authors = ["LoanLedger"]
 edition = "2021"

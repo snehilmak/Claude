@@ -73,11 +73,24 @@ fn prune_backups(dir: &std::path::Path) {
     }
 }
 
+/// Read a user-selected import file. Kept in Rust so the webview needs no
+/// blanket filesystem permission — only this one command.
+#[tauri::command]
+fn read_import_file(path: String) -> Result<String, String> {
+    const MAX_IMPORT_BYTES: u64 = 20 * 1024 * 1024;
+    let meta = std::fs::metadata(&path).map_err(|e| e.to_string())?;
+    if meta.len() > MAX_IMPORT_BYTES {
+        return Err("Import file is too large (max 20 MB).".into());
+    }
+    std::fs::read_to_string(&path).map_err(|e| e.to_string())
+}
+
 fn migrations() -> Vec<Migration> {
-    vec![Migration {
-        version: 1,
-        description: "create loans and payments tables",
-        sql: r#"
+    vec![
+        Migration {
+            version: 1,
+            description: "create loans and payments tables",
+            sql: r#"
             CREATE TABLE IF NOT EXISTS loans (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
@@ -101,8 +114,27 @@ fn migrations() -> Vec<Migration> {
             );
             CREATE INDEX IF NOT EXISTS idx_payments_loan ON payments(loan_id);
         "#,
-        kind: MigrationKind::Up,
-    }]
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 2,
+            description: "create ledger_entries table for the cash in/out ledger",
+            sql: r#"
+            CREATE TABLE IF NOT EXISTS ledger_entries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT NOT NULL,
+                name TEXT NOT NULL,
+                direction TEXT NOT NULL CHECK (direction IN ('in', 'out')),
+                amount REAL NOT NULL DEFAULT 0,
+                note TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_ledger_name ON ledger_entries(name);
+            CREATE INDEX IF NOT EXISTS idx_ledger_date ON ledger_entries(date);
+        "#,
+            kind: MigrationKind::Up,
+        },
+    ]
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -121,7 +153,12 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build());
 
     builder
-        .invoke_handler(tauri::generate_handler![db_path, backup_db, auto_backup])
+        .invoke_handler(tauri::generate_handler![
+            db_path,
+            backup_db,
+            auto_backup,
+            read_import_file
+        ])
         .run(tauri::generate_context!())
         .expect("error while running LoanLedger");
 }

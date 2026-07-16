@@ -4,16 +4,21 @@ import {
   backupDatabase,
   checkForUpdate,
   installUpdate,
+  pickImportFile,
 } from "../system";
+import { parseImportFile, dedupeAgainstExisting } from "../import";
+import { listLedgerEntries, createLedgerEntries } from "../db";
 
 interface Props {
   version: string;
   showToast: (m: string) => void;
+  onDataChanged: () => void;
 }
 
-export default function Settings({ version, showToast }: Props) {
+export default function Settings({ version, showToast, onDataChanged }: Props) {
   const [dbPath, setDbPath] = useState("");
   const [checking, setChecking] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     databasePath().then(setDbPath).catch(() => setDbPath("(unavailable in browser)"));
@@ -47,11 +52,60 @@ export default function Settings({ version, showToast }: Props) {
     }
   }
 
+  async function doImport() {
+    setImporting(true);
+    try {
+      const text = await pickImportFile();
+      if (text === null) return; // user cancelled the file dialog
+
+      const parsed = parseImportFile(text);
+      if (parsed.ledger.length === 0) {
+        showToast("Import file contains no ledger entries.");
+        return;
+      }
+
+      const existing = await listLedgerEntries();
+      const { fresh, skipped } = dedupeAgainstExisting(parsed.ledger, existing);
+      if (fresh.length === 0) {
+        showToast(`Nothing to import — all ${skipped} entries already exist.`);
+        return;
+      }
+
+      const ok = window.confirm(
+        `Import ${fresh.length} ledger entr${fresh.length === 1 ? "y" : "ies"}` +
+          (skipped > 0 ? ` (${skipped} duplicates will be skipped)` : "") +
+          `?`
+      );
+      if (!ok) return;
+
+      await createLedgerEntries(fresh);
+      onDataChanged();
+      showToast(
+        `Imported ${fresh.length} entries` +
+          (skipped > 0 ? `, skipped ${skipped} duplicates` : "")
+      );
+    } catch (e) {
+      showToast(`Import failed: ${e instanceof Error ? e.message : e}`);
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <>
       <div className="page-head">
         <h1>Settings</h1>
       </div>
+
+      <div className="section-title">Import</div>
+      <p className="muted">
+        Bring in cash in/out history from a LoanLedger import file (
+        <code>.json</code>). Entries you already have are detected and skipped,
+        so importing the same file twice is safe.
+      </p>
+      <button className="btn" onClick={doImport} disabled={importing}>
+        {importing ? "Importing…" : "Import ledger entries…"}
+      </button>
 
       <div className="section-title">Backup</div>
       <p className="muted">
