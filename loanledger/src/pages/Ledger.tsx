@@ -5,7 +5,13 @@ import {
   createLedgerEntry,
   deleteLedgerEntry,
 } from "../db";
-import { balancesByName, summarizeLedger, knownNames } from "../ledger";
+import {
+  balancesByName,
+  summarizeLedger,
+  knownNames,
+  activeBalances,
+  settledNames,
+} from "../ledger";
 import { formatMoney } from "../calc";
 
 interface Props {
@@ -22,6 +28,8 @@ export default function Ledger({ refreshKey, onChange, showToast }: Props) {
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [nameFilter, setNameFilter] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  // Hide people whose money in/out cancels to zero, unless the user opts in.
+  const [showSettled, setShowSettled] = useState(false);
 
   // Entry form state
   const [date, setDate] = useState(todayIso());
@@ -44,9 +52,14 @@ export default function Ledger({ refreshKey, onChange, showToast }: Props) {
   const summary = useMemo(() => summarizeLedger(entries), [entries]);
   const balances = useMemo(() => balancesByName(entries), [entries]);
   const names = useMemo(() => knownNames(entries), [entries]);
+  const settled = useMemo(() => settledNames(balances), [balances]);
+  const visibleBalances = showSettled ? balances : activeBalances(balances);
+  const hiddenPeople = balances.length - visibleBalances.length;
   const visible = nameFilter
     ? entries.filter((e) => e.name === nameFilter)
-    : entries;
+    : showSettled
+      ? entries
+      : entries.filter((e) => !settled.has(e.name));
 
   async function addEntry() {
     const amountNum = Number(amount);
@@ -122,6 +135,19 @@ export default function Ledger({ refreshKey, onChange, showToast }: Props) {
       ) : (
         <>
           <div className="section-title">Balances by person</div>
+          <div className="toolbar">
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={showSettled}
+                onChange={(e) => setShowSettled(e.target.checked)}
+              />
+              Show settled (net $0)
+            </label>
+            {!showSettled && hiddenPeople > 0 && (
+              <span className="muted">{hiddenPeople} settled hidden</span>
+            )}
+          </div>
           <table>
             <thead>
               <tr>
@@ -132,7 +158,7 @@ export default function Ledger({ refreshKey, onChange, showToast }: Props) {
               </tr>
             </thead>
             <tbody>
-              {balances.map((b) => (
+              {visibleBalances.map((b) => (
                 <tr
                   key={b.name}
                   className="clickable"

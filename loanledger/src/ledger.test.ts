@@ -1,6 +1,13 @@
 import { describe, it, expect } from "vitest";
 import type { LedgerEntry } from "./types";
-import { balancesByName, summarizeLedger, knownNames } from "./ledger";
+import {
+  balancesByName,
+  summarizeLedger,
+  knownNames,
+  activeBalances,
+  settledNames,
+  isContactSettled,
+} from "./ledger";
 
 let nextId = 1;
 function entry(overrides: Partial<LedgerEntry> = {}): LedgerEntry {
@@ -87,6 +94,35 @@ describe("summarizeLedger", () => {
       contacts: 0,
       entries: 0,
     });
+  });
+});
+
+describe("settled contacts", () => {
+  const entries = [
+    // ROY: in 5000, out 5000 -> net 0 (settled)
+    entry({ name: "ROY", direction: "in", amount: 5000 }),
+    entry({ name: "ROY", direction: "out", amount: 5000 }),
+    // AMIN: out 14500 -> net -14500 (active)
+    entry({ name: "AMIN", direction: "out", amount: 14500 }),
+  ];
+
+  it("flags a net-zero person as settled", () => {
+    const rows = balancesByName(entries);
+    const roy = rows.find((r) => r.name === "ROY")!;
+    const amin = rows.find((r) => r.name === "AMIN")!;
+    expect(isContactSettled(roy)).toBe(true);
+    expect(isContactSettled(amin)).toBe(false);
+  });
+
+  it("activeBalances drops settled people", () => {
+    const active = activeBalances(balancesByName(entries));
+    expect(active.map((r) => r.name)).toEqual(["AMIN"]);
+  });
+
+  it("settledNames returns the hidden names", () => {
+    const names = settledNames(balancesByName(entries));
+    expect(names.has("ROY")).toBe(true);
+    expect(names.has("AMIN")).toBe(false);
   });
 });
 

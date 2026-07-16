@@ -44,8 +44,8 @@ export async function createLoan(loan: NewLoan): Promise<number> {
   const ts = nowIso();
   const res = await conn.execute(
     `INSERT INTO loans
-       (name, principal_original, interest_rate, interest_period, start_date, status, notes, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, 'active', $6, $7, $7)`,
+       (name, principal_original, interest_rate, interest_period, start_date, status, notes, phone, email, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, 'active', $6, $7, $8, $9, $9)`,
     [
       loan.name,
       loan.principal_original,
@@ -53,6 +53,8 @@ export async function createLoan(loan: NewLoan): Promise<number> {
       loan.interest_period,
       loan.start_date,
       loan.notes,
+      loan.phone,
+      loan.email,
       ts,
     ]
   );

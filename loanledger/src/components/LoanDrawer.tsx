@@ -132,6 +132,17 @@ export function LoanDrawer({
           </div>
         </div>
 
+        {(loan.phone || loan.email) && (
+          <p className="muted contact-line">
+            {loan.phone && <span>📞 {loan.phone}</span>}
+            {loan.email && (
+              <span>
+                ✉️ <a href={`mailto:${loan.email}`}>{loan.email}</a>
+              </span>
+            )}
+          </p>
+        )}
+
         {loan.notes && <p className="muted">{loan.notes}</p>}
 
         {loan.status === "active" && (

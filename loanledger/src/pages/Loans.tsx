@@ -12,6 +12,7 @@ import {
 import {
   currentBalance,
   periodInterest,
+  isLoanActiveView,
   formatMoney,
   formatRate,
   periodLabel,
@@ -31,6 +32,8 @@ export default function Loans({ refreshKey, onChange, showToast }: Props) {
   const [selected, setSelected] = useState<Loan | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Loan | null>(null);
+  // Hide fully-paid and closed loans by default; the toggle reveals them.
+  const [showAll, setShowAll] = useState(false);
 
   async function load() {
     const [ls, ps] = await Promise.all([listLoans(), listAllPayments()]);
@@ -78,6 +81,14 @@ export default function Loans({ refreshKey, onChange, showToast }: Props) {
     showToast("Loan deleted");
   }
 
+  const visibleLoans = showAll
+    ? loans
+    : loans.filter((l) => isLoanActiveView(l, byLoan.get(l.id) ?? []));
+  const hiddenCount = loans.length - visibleLoans.length;
+  const knownNames = [...new Set(loans.map((l) => l.name))].sort((a, b) =>
+    a.localeCompare(b)
+  );
+
   return (
     <>
       <div className="page-head">
@@ -96,40 +107,74 @@ export default function Loans({ refreshKey, onChange, showToast }: Props) {
       {loans.length === 0 ? (
         <div className="empty">No loans yet. Click “New loan” to get started.</div>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Borrower</th>
-              <th>Status</th>
-              <th>Rate</th>
-              <th className="num">Balance</th>
-              <th className="num">Interest / period</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loans.map((loan) => {
-              const payments = byLoan.get(loan.id) ?? [];
-              const balance = currentBalance(loan, payments);
-              return (
-                <tr
-                  key={loan.id}
-                  className="clickable"
-                  onClick={() => setSelected(loan)}
-                >
-                  <td>{loan.name}</td>
-                  <td>
-                    <span className={`badge ${loan.status}`}>{loan.status}</span>
-                  </td>
-                  <td>
-                    {formatRate(loan.interest_rate)} {periodLabel(loan.interest_period)}
-                  </td>
-                  <td className="num">{formatMoney(balance)}</td>
-                  <td className="num">{formatMoney(periodInterest(loan, balance))}</td>
+        <>
+          <div className="toolbar">
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={showAll}
+                onChange={(e) => setShowAll(e.target.checked)}
+              />
+              Show settled &amp; closed
+            </label>
+            {!showAll && hiddenCount > 0 && (
+              <span className="muted">
+                {hiddenCount} settled/closed hidden
+              </span>
+            )}
+          </div>
+          {visibleLoans.length === 0 ? (
+            <div className="empty">
+              All loans are settled or closed. Tick “Show settled &amp; closed”
+              to see them.
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Borrower</th>
+                  <th>Status</th>
+                  <th>Rate</th>
+                  <th className="num">Balance</th>
+                  <th className="num">Interest / period</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {visibleLoans.map((loan) => {
+                  const payments = byLoan.get(loan.id) ?? [];
+                  const balance = currentBalance(loan, payments);
+                  const settled = balance <= 0;
+                  return (
+                    <tr
+                      key={loan.id}
+                      className="clickable"
+                      onClick={() => setSelected(loan)}
+                    >
+                      <td>{loan.name}</td>
+                      <td>
+                        {settled && loan.status === "active" ? (
+                          <span className="badge closed">settled</span>
+                        ) : (
+                          <span className={`badge ${loan.status}`}>
+                            {loan.status}
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        {formatRate(loan.interest_rate)}{" "}
+                        {periodLabel(loan.interest_period)}
+                      </td>
+                      <td className="num">{formatMoney(balance)}</td>
+                      <td className="num">
+                        {formatMoney(periodInterest(loan, balance))}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </>
       )}
 
       {selected && (
@@ -152,6 +197,7 @@ export default function Loans({ refreshKey, onChange, showToast }: Props) {
       {showForm && (
         <LoanForm
           initial={editing ?? undefined}
+          knownNames={knownNames}
           onCancel={() => {
             setShowForm(false);
             setEditing(null);

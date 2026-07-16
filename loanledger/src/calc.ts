@@ -27,6 +27,23 @@ export function currentBalance(loan: Loan, payments: Payment[]): number {
 }
 
 /**
+ * A loan is "settled" once it's fully paid off (balance is zero). Settled loans
+ * are hidden from the default list view since there's nothing left to collect.
+ */
+export function isLoanSettled(loan: Loan, payments: Payment[]): boolean {
+  return currentBalance(loan, payments) <= 0;
+}
+
+/**
+ * True when a loan should appear in the default (active) view: still open and
+ * still carrying a balance. Manually-closed or fully-paid loans are hidden
+ * until the user chooses "show all".
+ */
+export function isLoanActiveView(loan: Loan, payments: Payment[]): boolean {
+  return loan.status === "active" && !isLoanSettled(loan, payments);
+}
+
+/**
  * Interest charged for one period on the current balance.
  * e.g. $380,000 at 1% weekly => $3,800 this week.
  */
